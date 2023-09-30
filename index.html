@@ -50,7 +50,7 @@
         <div v-else class="column is-6">
 
           <!-- Chat Messages -->
-          <div class="box message-container">
+          <div class="box message-container" id="msgs">
             <div v-for="message in messages" class="message">
               <div class="message-header">
                 <p>@{{ message.user }}</p>
@@ -154,6 +154,10 @@
               messages.push(doc.data());
             });
             this.messages = messages
+            setTimeout(() => {
+              const msgs = document.getElementById('msgs');
+              msgs.scrollTop = msgs.scrollHeight;
+            }, 100);
           });
           this.isInHall = false;
         },
