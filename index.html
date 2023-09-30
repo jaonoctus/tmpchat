@@ -4,6 +4,7 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     .message-container {
       max-height: 300px; /* Set a maximum height for the messages */
@@ -26,6 +27,13 @@
           class="tag is-info is-medium" style="position: fixed; top: 10px; right: 10px;"
         >
           room: {{ room }}
+        </div>
+
+        <div
+          v-if="copied"
+          class="tag is-success is-medium" style="position: fixed; bottom: 10px; right: 10px;"
+        >
+          copied!
         </div>
 
         <div v-if="isInHall">
@@ -56,7 +64,10 @@
                 <p>@{{ message.user }}</p>
               </div>
               <div class="message-body">
-                {{ message.message }}
+                {{ shortMessage(message.message) }} <span class="icon" @click.prevent="copyToClipboard(message.message)">
+                  <i class="fa-regular fa-copy"></i>
+                </span>
+
               </div>
             </div>
           </div>
@@ -119,6 +130,7 @@
         return {
           isInHall: true,
           isJoining: false,
+          copied: false,
           room: '',
           currentMessage: '',
           currentUsername: '',
@@ -152,6 +164,7 @@
             const messages = [];
             querySnapshot.forEach((doc) => {
               messages.push(doc.data());
+              const message = doc.data().message;
             });
             this.messages = messages
             setTimeout(() => {
@@ -166,6 +179,25 @@
           this.room = room;
           this.isJoining = true;
           this.joinRoom();
+        },
+        shortMessage (msg) {
+          if (msg.length < 22) {
+            return msg;
+          }
+          return msg.substring(0, 11) + '...' + msg.substring(msg.length - 11, msg.length);
+        },
+        copyToClipboard (msg) {
+          // check if have clipboard
+          if (!navigator.clipboard) {
+            alert('Your browser does not support clipboard. FAZ O L');
+            return;
+          }
+
+          navigator.clipboard.writeText(msg);
+          this.copied = true;
+          setTimeout(() => {
+            this.copied = false;
+          }, 1000);
         }
       }
     });
