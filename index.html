@@ -5,6 +5,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+
   <style>
     .message-container {
       max-height: 300px; /* Set a maximum height for the messages */
@@ -59,12 +61,14 @@
 
           <!-- Chat Messages -->
           <div class="box message-container" id="msgs">
-            <div v-for="message in messages" class="message">
-              <div class="message-header">
-                <p>@{{ message.user }}</p>
+            <div v-for="event in messages" class="message">
+              <div class="message-header" :style="getColor(event.pubkey)">
+                <span class="tag">@{{ event.user }}</span>
+                <span v-if="checksig(event)" class="tag"><i class="fa-solid fa-circle-check"></i> verified</span>
+                <span v-else class="tag"><i class="fa-solid fa-circle-xmark"></i> not verified</span>
               </div>
               <div class="message-body">
-                {{ shortMessage(message.message) }} <span class="icon" @click.prevent="copyToClipboard(message.message)">
+                {{ shortMessage(event.content) }} <span class="icon" @click.prevent="copyToClipboard(event.content)">
                   <i class="fa-regular fa-copy"></i>
                 </span>
 
@@ -103,7 +107,14 @@
     // Add Firebase products that you want to use
     import { getAuth } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js'
     import { getFirestore, collection, addDoc, query, onSnapshot, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js'
-
+    const {
+      generatePrivateKey,
+      getPublicKey,
+      getEventHash,
+      getSignature,
+      validateEvent,
+      verifySignature
+    } = window.NostrTools;
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiUQg6YkD5nqEoFmYSge-lggPEjI39lB0",
@@ -125,6 +136,13 @@
         if (username) {
           this.currentUsername = username;
         }
+        const privateKey = window.localStorage.getItem('privateKey');
+        if (privateKey) {
+          this.privateKey = privateKey;
+        } else {
+          this.privateKey = generatePrivateKey();
+          window.localStorage.setItem('privateKey', this.privateKey);
+        }
       },
       data() {
         return {
@@ -135,6 +153,7 @@
           currentMessage: '',
           currentUsername: '',
           messages: [],
+          privateKey: null,
         };
       },
       methods: {
@@ -146,9 +165,26 @@
             room: this.room,
             timestamp: Math.round(new Date().getTime() / 1000),
           }
-          this.messages.push(msg);
-          this.currentMessage = "";
-          const docRef = await addDoc(collection(db, "messages"), msg);
+          let event = {
+            pubkey: getPublicKey(this.privateKey),
+            kind: 6969,
+            created_at: Math.round(Date.now() / 1000),
+            content: this.currentMessage,
+            tags: [],
+            room: this.room,
+            user: this.currentUsername,
+          }
+
+          event.id = getEventHash(event)
+          event.sig = getSignature(event, this.privateKey)
+
+          if (validateEvent(event) && verifySignature(event)) {
+            // this.messages.push(event);
+            this.currentMessage = "";
+            const docRef = await addDoc(collection(db, "messages"), event);
+          } else {
+            alert('deu merda ai. faz o L')
+          }
         },
         joinRoom() {
           if (!this.isJoining) {
@@ -156,9 +192,9 @@
             return
           }
           const q = query(
-          collection(db, "messages"),
-          where("room", "==", this.room),
-          orderBy("timestamp", "asc")
+            collection(db, "messages"),
+            where("room", "==", this.room),
+            orderBy("created_at", "asc")
           );
           const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const messages = [];
@@ -198,6 +234,13 @@
           setTimeout(() => {
             this.copied = false;
           }, 1000);
+        },
+        getColor (pubkey) {
+          const color = pubkey.substring(0, 6);
+          return `background-color: #${color}`;
+        },
+        checksig (event) {
+          return verifySignature(event);
         }
       }
     });
