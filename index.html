@@ -64,8 +64,8 @@
             <div v-for="event in messages" class="message">
               <div class="message-header" :style="getColor(event.pubkey)">
                 <span class="tag">@{{ event.user }}</span>
-                <span v-if="checksig(event)" class="tag"><i class="fa-solid fa-circle-check"></i> verified</span>
-                <span v-else class="tag"><i class="fa-solid fa-circle-xmark"></i> not verified</span>
+                <span v-if="checksig(event)" class="tag is-success"><i class="fa-solid fa-circle-check"></i> verified</span>
+                <span v-else class="tag is-danger"><i class="fa-solid fa-circle-xmark"></i> not verified</span>
               </div>
               <div class="message-body">
                 {{ shortMessage(event.content) }} <span class="icon" @click.prevent="copyToClipboard(event.content)">
