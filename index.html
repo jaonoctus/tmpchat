@@ -20,7 +20,7 @@
 <body>
   <section id="app" v-cloak class="section">
     <div class="container">
-      <div class="columns is-centered">
+      <div class="rows">
         <h1 class="title is-4">This is a secure chat.</h1>
         <h2 class="subtitle is-5">Don`t verify, trust.</h2>
 
@@ -57,9 +57,9 @@
             </div>
           </div>
         </div>
-        <div v-else class="column is-6">
-
-          <!-- Chat Messages -->
+        <div v-else class="columns is-centered">
+          <div class="column is-6">
+            <!-- Chat Messages -->
           <div class="box message-container" id="msgs">
             <div v-for="event in messages" class="message">
               <div class="message-header" :style="getColor(event.pubkey)">
@@ -94,6 +94,7 @@
             <div class="control">
               <button @click.prevent="onSubmit" class="button is-primary">Send</button>
             </div>
+          </div>
           </div>
         </div>
       </div>
