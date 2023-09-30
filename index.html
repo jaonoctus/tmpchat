@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <title>tmp chat</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  </head>
+  <body>
+    <h1>this is a secure chat. Don`t verify, trust.</h1>
+    <div id="app">
+      <div>
+        <div
+          v-for="message in messages"
+          style="border: 1px solid black; margin-bottom: 15px; padding: 5px;"
+        >
+          <span>@{{ message.user }}:</span>
+          <span>{{ message.message }}</span>
+        </div>
+      </div>
+
+      <div>
+        <input v-model="currentUsername" type="text" placeholder="nickname" maxlength="10" />
+        <input v-model="currentMessage" type="text" placeholder="message" />
+        <button @click.prevent="onSubmit">send</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js'
+
+      // If you enabled Ana
+      // Add Firebase products that you want to use
+      import { getAuth } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js'
+      import { getFirestore, collection, addDoc, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js'
+
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDiUQg6YkD5nqEoFmYSge-lggPEjI39lB0",
+        authDomain: "tmpchat-757b3.firebaseapp.com",
+        projectId: "tmpchat-757b3",
+        storageBucket: "tmpchat-757b3.appspot.com",
+        messagingSenderId: "85801633211",
+        appId: "1:85801633211:web:63cafc28c573e5d753f09e"
+      };
+
+      // Initialize Firebase
+      const firebase = initializeApp(firebaseConfig);
+
+      const db = getFirestore(firebase);
+
+      const app = Vue.createApp({
+        mounted() {
+          const q = query(collection(db, "messages"));
+          const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const messages = [];
+            querySnapshot.forEach((doc) => {
+              messages.push(doc.data());
+            });
+            this.messages = messages;
+          });
+        },
+        data() {
+          return {
+            currentMessage: "",
+            currentUsername: "",
+            messages: [],
+          };
+        },
+        methods: {
+          async onSubmit() {
+            const msg = {
+              user: this.currentUsername,
+              message: this.currentMessage,
+            }
+            this.messages.push(msg);
+            this.currentMessage = "";
+            const docRef = await addDoc(collection(db, "messages"), msg);
+          },
+        }
+      });
+      app.mount("#app");
+    </script>
+
+  </body>
+</html>
